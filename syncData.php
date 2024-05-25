@@ -67,7 +67,7 @@ if (!class_exists('syncData')) {
           'capabilities' => array(
               'create_posts' => false,
           ),
-          'supports' => array('title','editor','custom-fields'),
+          'supports' => array('title', 'editor', 'custom-fields'),
           'map_meta_cap' => true,
       );
       register_post_type('apid', $args);
@@ -139,7 +139,7 @@ function action_apid_custom_columns_content($column_id, $post_id) {
       echo get_post_meta($post_id, 'bCity', true);
       break;
     case 'bActive':
-      echo get_post_meta($post_id, 'bActive', true) == '1'? 'Yes':'No';
+      echo get_post_meta($post_id, 'bActive', true) == '1' ? 'Yes' : 'No';
   }
 }
 
@@ -226,7 +226,6 @@ function sync_external() {
   }
 
   $ch = curl_init();
-
   curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices?site=&api_key=123456");
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
@@ -332,11 +331,10 @@ function random_business_list($atts) {
   $postHTML = file_get_contents(plugin_dir_path(__FILE__) . 'templates/template' . $view . '/postHTML.php');
 
   $posts = get_posts([
-            'post_type' => 'apid',
-            'post_status' => 'publish',
-            'numberposts' => trim($atts['num'])
-          ]);
-          
+      'post_type' => 'apid',
+      'post_status' => 'publish',
+      'numberposts' => trim($atts['num'])
+  ]);
 
   $thebox = file_get_contents(plugin_dir_path(__FILE__) . 'templates/template' . trim($atts['view']) . '/main.php');
 
@@ -344,7 +342,7 @@ function random_business_list($atts) {
 
   foreach ($posts as $post) {
     $rep = array("##bname##", "##bemail##", "##bphone##", "##bcat##", "##bdate##", "##buser##", "##baddress##");
-    $repwith = array('<a target="_blank" href="'.get_post_permalink($post->ID).'">'.$post->post_title.'</a>', get_post_meta($post->ID,'bEmail',true), get_post_meta($post->ID,'bPhone',true), get_post_meta($post->ID,'bCat',true), $post->post_date, get_post_meta($post->ID,'bUser',true), get_post_meta($post->ID,'bAddress',true));
+    $repwith = array('<a target="_blank" href="' . get_post_permalink($post->ID) . '">' . $post->post_title . '</a>', get_post_meta($post->ID, 'bEmail', true), get_post_meta($post->ID, 'bPhone', true), get_post_meta($post->ID, 'bCat', true), $post->post_date, get_post_meta($post->ID, 'bUser', true), get_post_meta($post->ID, 'bAddress', true));
     $thisbox = str_replace($rep, $repwith, $thebox);
 
     $html .= $thisbox;
@@ -362,8 +360,104 @@ function empty_page_template($page_template) {
 
 //add_filter('page_template', 'empty_page_template');
 
+add_shortcode('al-businessinfo', 'apid_business_info');
+
+function apid_business_info() {
+  global $post;
+  ob_start();
+  echo '<h3 class="">Business Information</h3><p>Email: ' . get_post_meta($post->ID, 'bEmail', true) . '</p><p>Phone: ' . get_post_meta($post->ID, 'bPhone', true) . '</p><p>User: ' . get_post_meta($post->ID, 'bUser', true) . '</p>';
+  $ret = ob_get_contents();
+  ob_end_clean();
+  return $ret;
+}
+
+add_shortcode('al-reviews-display', 'apid_reviews_info');
+
+function apid_reviews_info() {
+  global $post;
+  wp_enqueue_style('slick', plugins_url('/slick/slick.css', __FILE__));
+  wp_enqueue_style('slick-theme', plugins_url('/slick/slick-theme.css', __FILE__));
+  wp_enqueue_script('jquery');
+  wp_enqueue_script('slickjs', plugins_url('slick/slick.min.js', __FILE__));
+  $businessID = trim(get_post_meta($post->ID, 'bID', true));
+  
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices/".$businessID."?api_key=123456");
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+  $headers = array();
+  $headers[] = "Accept: application/json";
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+  $result = curl_exec($ch);
+
+  if (curl_errno($ch)) {
+    echo 'Error:' . curl_error($ch);
+    die;
+  }
+  curl_close($ch);
+  
+  $reviews = json_decode($result, true);
+  $noR = '';
+  if(empty($reviews)){
+    $noR = '<p>No Reviews for this post</p>';
+  }
+
+  ob_start();
+  $html = '<h3 style="color:#c15800;font-weight:700;margin-bottom-10px;">What People Say About '.$post->post_title.'</h3>'.$noR.'<div class="slick-slider">';
+  foreach($reviews as $review){
+    $rating = '<div class="rating" style="width:100%;overflow:hidden;display:flex;justify-content:center;margin:10px 0;">';
+    for($i = 0; $i < (int)$review['rating']; $i++){
+      $rating .= '<img width="20" src="'.plugins_url('sync/star.png').'" alt="rating"/>';
+    }
+    $rating .= '</div>';
+    $r = strlen($review['review']) > 50 ? substr(strip_tags($review['review']), 0, 100) .'...':$review['review'];
+    $html .= '<div class="slick-item" style="overflow: hidden;background:#fff;">'.$rating.$r.'</div><p>'.$review['author'].'</p>';
+  }
+  $html .= '</div><style>div.rating img{display:block;float:left;}div.slick-slide:first-child{margin-left:0;}.slick-slide{margin:3px 8px;padding:2px 10px 0px 10px;border-radius:10px  10px 0 0;}</style><script>jQuery(".slick-slider").slick({ autoplay:false,infinite: true,slidesToShow: 3,slidesToScroll: 1,arrows: false});</script>';
+  echo $html;
+  $ret = ob_get_contents();
+  ob_end_clean();
+  return $ret;
+}
+
+add_shortcode('al-map-display', 'apid_map_display');
+
+function apid_map_display() {
+  global $post;
+  $address = get_post_meta($post->ID, 'bAddress', true);
+  $city = get_post_meta($post->ID, 'bCity', true);
+  $country = get_post_meta($post->ID, 'bCountry', true);
+  if(empty($address)){
+    $map = '<p>No Address Found</p>';
+  }else{
+    $addressArr = explode(' ',$address);
+    if(!empty($city)){
+      array_push($addressArr,$city);
+    }
+    if(!empty($country)){
+      array_push($addressArr,$country);
+    }
+    $place = implode('+', $addressArr);
+
+    $map = '<iframe width="450" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyDcx3YT7gI_YaV12E7zyDFnQb_q0_TtIDs&q='.$place.'" allowfullscreen></iframe>';
+  }
+  ob_start();
+  echo '<h3 class="">Map</h3><div id="map">'.$map.'</div>';
+  $ret = ob_get_contents();
+  ob_end_clean();
+  return $ret;
+}
+
 add_action('init', 'do_output_buffer');
 
 function do_output_buffer() {
   ob_start();
+}
+add_action( 'wp_enqueue_scripts', 'my_theme_enqueue_styles', 11 );
+function my_theme_enqueue_styles() {
+    wp_enqueue_style( 'child-style', get_stylesheet_uri() );
 }
