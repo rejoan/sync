@@ -409,15 +409,15 @@ function apid_reviews_info() {
   ob_start();
   $html = '<h3 style="color:#c15800;font-weight:700;margin-bottom-10px;">What People Say About '.$post->post_title.'</h3>'.$noR.'<div class="slick-slider">';
   foreach($reviews as $review){
-    $rating = '<div class="rating" style="width:100%;overflow:hidden;display:flex;justify-content:center;margin:10px 0;">';
+    $rating = '<div class="rating" style="width:100%;overflow:hidden;display:flex;justify-content:center;background:#fff;border-radius:10px 10px 0 0;padding-top:10px;">';
     for($i = 0; $i < (int)$review['rating']; $i++){
       $rating .= '<img width="20" src="'.plugins_url('sync/star.png').'" alt="rating"/>';
     }
     $rating .= '</div>';
     $r = strlen($review['review']) > 50 ? substr(strip_tags($review['review']), 0, 100) .'...':$review['review'];
-    $html .= '<div class="slick-item" style="overflow: hidden;background:#fff;">'.$rating.$r.'</div><p>'.$review['author'].'</p>';
+    $html .= '<div class="slick-item" style="overflow: hidden;">'.$rating.'<div style="background:#fff;padding:5px 10px;border-radius:0 0 10px 10px;height:160px;position:relative;" class="rtext">'.$r.'<img width="20" style="position:absolute;filter:invert(1);left:45%;bottom:-15px;" src="'.plugins_url('sync/down-arrow.png').'" alt="arrow"/></div><p style="text-align:center;margin-top:10px;">'.$review['author'].'</p></div>';
   }
-  $html .= '</div><style>div.rating img{display:block;float:left;}div.slick-slide:first-child{margin-left:0;}.slick-slide{margin:3px 8px;padding:2px 10px 0px 10px;border-radius:10px  10px 0 0;}</style><script>jQuery(".slick-slider").slick({ autoplay:false,infinite: true,slidesToShow: 3,slidesToScroll: 1,arrows: false});</script>';
+  $html .= '</div><style>div.rating img{display:block;float:left;}div.slick-slide:first-child{margin-left:0;}.slick-slide{margin:5px;}</style><script>jQuery(".slick-slider").slick({ autoplay:true,infinite: true,slidesToShow: 3,slidesToScroll: 1,arrows: false});</script>';
   echo $html;
   $ret = ob_get_contents();
   ob_end_clean();
