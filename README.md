@@ -13,9 +13,20 @@ A WordPress plugin work with backend & frontend CPT.
 - you may make a child theme of twenty twenty four with single-apid.html template and use example 2,3 shortcode
 
 ## Requirements
-- In wp-config.php put your map key for shortcode [al-map-display]
+1. First clone the repo
+```
+git clone git@github.com:rejoan/sync.git && cd sync
+```
+2. Then install the plugin and activate
+
+3. In wp-config.php put your map key for shortcode [al-map-display]
+
 ```
 define('API_KEY_GOOGLE', 'google_map_api_key');
+```
+4. In syncData.php replace API end point
+```
+https://api.prospectbox.co
 ```
 
 
