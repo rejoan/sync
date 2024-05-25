@@ -50,7 +50,7 @@ if (!class_exists('syncData')) {
           'update_item' => 'Update Item'
       );
       $args = array(
-          'label' => __('API Data'),
+          'label' => __('Business API'),
           'description' => __('API data through Sync'),
           'labels' => $labels,
           'supports' => array('title', 'custom-fields'),
