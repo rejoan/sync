@@ -1,9 +1,9 @@
 <?php
 
 /*
-  Plugin Name: syncData
+  Plugin Name: Sync Business
   description: A simple custom plugin to get API data
-  Version: 1.0.0
+  Version: 1.1.0
   Author: Rejoanul Alam
  */
 
@@ -50,7 +50,7 @@ if (!class_exists('syncData')) {
           'update_item' => 'Update Item'
       );
       $args = array(
-          'label' => __('Business API'),
+          'label' => __('Business Sync'),
           'description' => __('API data through Sync'),
           'labels' => $labels,
           'supports' => array('title', 'custom-fields'),
@@ -473,12 +473,6 @@ function apid_map_display() {
   $ret = ob_get_contents();
   ob_end_clean();
   return $ret;
-}
-
-add_action('init', 'do_output_buffer');
-
-function do_output_buffer() {
-  ob_start();
 }
 
 add_action('wp_enqueue_scripts', 'my_theme_enqueue_styles', 11);
