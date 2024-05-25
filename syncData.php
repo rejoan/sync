@@ -443,7 +443,7 @@ function apid_map_display() {
     }
     $place = implode('+', $addressArr);
 
-    $map = '<iframe width="450" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyDcx3YT7gI_YaV12E7zyDFnQb_q0_TtIDs&q='.$place.'" allowfullscreen></iframe>';
+    $map = '<iframe width="450" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key='.API_KEY_GOOGLE.'&q='.$place.'" allowfullscreen></iframe>';
   }
   ob_start();
   echo '<h3 class="">Map</h3><div id="map">'.$map.'</div>';
