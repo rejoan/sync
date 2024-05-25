@@ -89,11 +89,19 @@ if (!class_exists('syncData')) {
 
 add_filter('views_edit-apid', 'add_button_to_views');
 
+/**
+ * plugin url hidden field for ajax
+ * @param array $views
+ * @return string
+ */
 function add_button_to_views($views) {
   $views['my-button'] = '<button id="sync_data" class="button">Sync Data</button><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
   return $views;
 }
 
+/**
+ * admin menu for GRID
+ */
 function register_sync_menu() {
   add_menu_page('Sync API data', 'Sync Data', 'manage_options', 'sync_api', 'api_sync', 'dashicons-editor-table', 5);
 }
@@ -220,6 +228,10 @@ function api_sync() {
 add_action('wp_ajax_sync_external', 'sync_external');
 add_action('wp_ajax_nopriv_sync_external', 'sync_external');
 
+/**
+ * get API data and create CPT
+ * @global type $wpdb
+ */
 function sync_external() {
   if (!isset($_POST['action']) && ($_POST['action'] != 'sync_external')) {
     exit('The form is not valid');
@@ -362,6 +374,11 @@ function empty_page_template($page_template) {
 
 add_shortcode('al-businessinfo', 'apid_business_info');
 
+/**
+ * get business info shortcode
+ * @global type $post
+ * @return type
+ */
 function apid_business_info() {
   global $post;
   ob_start();
@@ -373,6 +390,11 @@ function apid_business_info() {
 
 add_shortcode('al-reviews-display', 'apid_reviews_info');
 
+/**
+ * get reviews from API for shortcode
+ * @global type $post
+ * @return type
+ */
 function apid_reviews_info() {
   global $post;
   wp_enqueue_style('slick', plugins_url('/slick/slick.css', __FILE__));
@@ -380,9 +402,9 @@ function apid_reviews_info() {
   wp_enqueue_script('jquery');
   wp_enqueue_script('slickjs', plugins_url('slick/slick.min.js', __FILE__));
   $businessID = trim(get_post_meta($post->ID, 'bID', true));
-  
+
   $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices/".$businessID."?api_key=123456");
+  curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices/" . $businessID . "?api_key=123456");
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -399,23 +421,24 @@ function apid_reviews_info() {
     die;
   }
   curl_close($ch);
-  
+
   $reviews = json_decode($result, true);
   $noR = '';
-  if(empty($reviews)){
+  if (empty($reviews)) {
     $noR = '<p>No Reviews for this post</p>';
   }
 
   ob_start();
-  $html = '<h3 style="color:#c15800;font-weight:700;margin-bottom-10px;">What People Say About '.$post->post_title.'</h3>'.$noR.'<div class="slick-slider">';
-  foreach($reviews as $review){
+  $html = '<h3 style="color:#c15800;font-weight:700;margin-bottom-10px;">What People Say About ' . $post->post_title . '</h3>' . $noR . '<div class="slick-slider">';
+  foreach ($reviews as $review) {
     $rating = '<div class="rating" style="width:100%;overflow:hidden;display:flex;justify-content:center;background:#fff;border-radius:10px 10px 0 0;padding-top:10px;">';
-    for($i = 0; $i < (int)$review['rating']; $i++){
-      $rating .= '<img width="20" src="'.plugins_url('sync/star.png').'" alt="rating"/>';
+    for ($i = 0; $i < (int) $review['rating']; $i++) {
+      $rating .= '<img width="20" src="' . plugins_url('sync/star.png') . '" alt="rating"/>';
     }
     $rating .= '</div>';
-    $r = strlen($review['review']) > 50 ? substr(strip_tags($review['review']), 0, 100) .'...':$review['review'];
-    $html .= '<div class="slick-item" style="overflow: hidden;">'.$rating.'<div style="background:#fff;padding:5px 10px;border-radius:0 0 10px 10px;height:160px;position:relative;" class="rtext">'.$r.'<img width="20" style="position:absolute;filter:invert(1);left:45%;bottom:-15px;" src="'.plugins_url('sync/down-arrow.png').'" alt="arrow"/></div><p style="text-align:center;margin-top:10px;">'.$review['author'].'</p></div>';
+    $r = strlen($review['review']) > 50 ? substr(strip_tags($review['review']), 0, 100) . '...'
+              : $review['review'];
+    $html .= '<div class="slick-item" style="overflow: hidden;">' . $rating . '<div style="background:#fff;padding:5px 10px;border-radius:0 0 10px 10px;height:160px;position:relative;" class="rtext">' . $r . '<img width="20" style="position:absolute;filter:invert(1);left:45%;bottom:-15px;" src="' . plugins_url('sync/down-arrow.png') . '" alt="arrow"/></div><p style="text-align:center;margin-top:10px;">' . $review['author'] . '</p></div>';
   }
   $html .= '</div><style>div.rating img{display:block;float:left;}div.slick-slide:first-child{margin-left:0;}.slick-slide{margin:5px;}</style><script>jQuery(".slick-slider").slick({ autoplay:true,infinite: true,slidesToShow: 3,slidesToScroll: 1,arrows: false});</script>';
   echo $html;
@@ -431,22 +454,22 @@ function apid_map_display() {
   $address = get_post_meta($post->ID, 'bAddress', true);
   $city = get_post_meta($post->ID, 'bCity', true);
   $country = get_post_meta($post->ID, 'bCountry', true);
-  if(empty($address)){
+  if (empty($address)) {
     $map = '<p>No Address Found</p>';
-  }else{
-    $addressArr = explode(' ',$address);
-    if(!empty($city)){
-      array_push($addressArr,$city);
+  } else {
+    $addressArr = explode(' ', $address);
+    if (!empty($city)) {
+      array_push($addressArr, $city);
     }
-    if(!empty($country)){
-      array_push($addressArr,$country);
+    if (!empty($country)) {
+      array_push($addressArr, $country);
     }
     $place = implode('+', $addressArr);
 
-    $map = '<iframe width="450" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key='.API_KEY_GOOGLE.'&q='.$place.'" allowfullscreen></iframe>';
+    $map = '<iframe width="450" height="250" frameborder="0" style="border:0" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps/embed/v1/place?key=' . API_KEY_GOOGLE . '&q=' . $place . '" allowfullscreen></iframe>';
   }
   ob_start();
-  echo '<h3 class="">Map</h3><div id="map">'.$map.'</div>';
+  echo '<h3 class="">Map</h3><div id="map">' . $map . '</div>';
   $ret = ob_get_contents();
   ob_end_clean();
   return $ret;
@@ -457,7 +480,9 @@ add_action('init', 'do_output_buffer');
 function do_output_buffer() {
   ob_start();
 }
-add_action( 'wp_enqueue_scripts', 'my_theme_enqueue_styles', 11 );
+
+add_action('wp_enqueue_scripts', 'my_theme_enqueue_styles', 11);
+
 function my_theme_enqueue_styles() {
-    wp_enqueue_style( 'child-style', get_stylesheet_uri() );
+  wp_enqueue_style('child-style', get_stylesheet_uri());
 }
