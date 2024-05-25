@@ -24,7 +24,7 @@ git clone git@github.com:rejoan/sync.git && cd sync
 ```
 define('API_KEY_GOOGLE', 'google_map_api_key');
 ```
-4. In syncData.php replace API end point
+4. In syncData.php replace API endpoint with yours
 ```
 https://api.prospectbox.co
 ```
