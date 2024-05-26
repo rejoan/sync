@@ -77,15 +77,18 @@ if (!class_exists('syncData')) {
   $syncData = new syncData();
 }
 
-add_action('manage_posts_extra_tablenav', 'eventd_button_to_views');
+add_action('manage_posts_extra_tablenav', 'apid_button_to_views');
 
 /**
  * plugin url hidden field for ajax
  * @param array $views
  * @return string
  */
-function add_button_to_views($views) {
-  echo '<p id="button-section"><button id="sync_data" class="button">Sync Data</button></p><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
+function apid_button_to_views($which) {
+  global $post_type;
+  if($which == 'top' && $post_type == 'apid'){
+    echo '<p id="button-section"><button id="sync_data" class="button">Sync Data</button></p><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
+  }
 }
 
 /**
