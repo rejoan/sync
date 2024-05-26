@@ -1,5 +1,6 @@
 jQuery(document).ready(function () {
-  jQuery('#sync_data').click(function(){
+  jQuery('#sync_data').click(function(e){
+    e.preventDefault();
     var admin_url = jQuery('#admin_url').val();
     var plugin_url = jQuery('#plugin_url').val();
       jQuery.ajax({
@@ -15,13 +16,14 @@ jQuery(document).ready(function () {
         beforeSend: function () {
             jQuery('#button-section').append('<img style="position:absolute;" id="loader" width="60" src="'+plugin_url+'/sync/loader.gif"/>');
             jQuery(this).addClass('disabled');
+            jQuery('p.btn-para').remove();
         },
         success: function (response) {
         jQuery(this).removeClass('disabled');
         jQuery('#loader').remove();
           if(response.code == 'empty'){
-              jQuery('#button-section').next('p').remove();
-              jQuery('<p>No New Data Found for Sync</p>').insertAfter('#button-section');
+              jQuery('p.btn-para').remove();
+              jQuery('<p class="btn-para">No New Data Found for Sync</p>').insertAfter('#button-section');
               return false;
           }
           location.reload();

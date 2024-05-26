@@ -7,10 +7,15 @@ html, body, canvas {
   touch-action: none;
   touch-action-delay: none;
 }
-.table-wrapper{
-  
+#button-section{
+  margin: 0;
 }
-.al-bbox-wrapper{
-  
+#button-section,p.btn-para{
+  float: left;
 }
-
+p.btn-para{
+  position: relative;
+  top:50%;
+  transform: translateY(-50%);
+  margin: 0 0 0 5px;
+}

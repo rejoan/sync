@@ -23,17 +23,7 @@ if (!class_exists('syncData')) {
      */
     public function setup_actions() {
       // Add Custom JS to admin panel
-      add_action('wp_enqueue_scripts', array($this, 'plugin_css_jsscripts'));
       add_action('init', array($this, 'api_data'));
-    }
-
-    /**
-     * Enqueue Scripts
-     */
-    public function plugin_css_jsscripts() {
-      if (is_page(array('random-business-list'))) {
-        wp_enqueue_style('style-common', plugins_url('/style.css', __FILE__));
-      }
     }
 
     /**
@@ -87,7 +77,7 @@ if (!class_exists('syncData')) {
   $syncData = new syncData();
 }
 
-add_filter('views_edit-apid', 'add_button_to_views');
+add_action('manage_posts_extra_tablenav', 'eventd_button_to_views');
 
 /**
  * plugin url hidden field for ajax
@@ -95,8 +85,7 @@ add_filter('views_edit-apid', 'add_button_to_views');
  * @return string
  */
 function add_button_to_views($views) {
-  $views['my-button'] = '<button id="sync_data" class="button">Sync Data</button><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
-  return $views;
+  echo '<p id="button-section"><button id="sync_data" class="button">Sync Data</button></p><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
 }
 
 /**
@@ -152,7 +141,7 @@ function action_apid_custom_columns_content($column_id, $post_id) {
 }
 
 /**
- * backend GRID
+ * backend GRID (this is unused, for custom admin menu)
  * @global type $wpdb
  */
 function api_sync() {
@@ -313,7 +302,11 @@ function sync_external() {
 add_action('admin_enqueue_scripts', 'add_backend_assets');
 
 function add_backend_assets() {
-  wp_enqueue_script('script-syncD', plugins_url('syncD.js', __FILE__));
+  global $post_type;
+  if($post_type == 'apid'){
+    wp_enqueue_script('script-syncD', plugins_url('syncD.js', __FILE__));
+    wp_enqueue_style('style-common', plugins_url('/style.css', __FILE__));
+  }
 }
 
 add_shortcode('random-business-list', 'random_business_list');
