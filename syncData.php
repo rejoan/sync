@@ -86,7 +86,7 @@ add_action('manage_posts_extra_tablenav', 'apid_button_to_views');
  */
 function apid_button_to_views($which) {
   global $post_type;
-  if($which == 'top' && $post_type == 'apid'){
+  if ($which == 'top' && $post_type == 'apid') {
     echo '<p id="button-section"><button id="sync_data" class="button">Sync Data</button></p><input type="hidden" id="admin_url" value="' . admin_url() . '"><input type="hidden" id="plugin_url" value="' . plugins_url() . '">';
   }
 }
@@ -306,7 +306,7 @@ add_action('admin_enqueue_scripts', 'add_backend_assets');
 
 function add_backend_assets() {
   global $post_type;
-  if($post_type == 'apid'){
+  if ($post_type == 'apid') {
     wp_enqueue_script('script-syncD', plugins_url('syncD.js', __FILE__));
     wp_enqueue_style('style-common', plugins_url('/style.css', __FILE__));
   }
@@ -441,6 +441,84 @@ function apid_reviews_info() {
   $ret = ob_get_contents();
   ob_end_clean();
   return $ret;
+}
+
+add_shortcode('ggle-reviews-display', 'apid_ggle_reviews_display');
+
+function apid_ggle_reviews_display() {
+  global $post;
+  $address = get_post_meta($post->ID, 'bAddress', true);
+  $city = get_post_meta($post->ID, 'bCity', true);
+  $country = get_post_meta($post->ID, 'bCountry', true);
+  if (empty($address)) {
+    $map = '<p>No Address Found</p>';
+  } else {
+    $addressArr = explode(' ', $post->post_title);
+    if (!empty($city)) {
+      $cityArr = explode(' ', $city);
+      foreach($cityArr as $ct){
+        array_push($addressArr, $ct);
+      }
+    }
+    if (!empty($country)) {
+      array_push($addressArr, $country);
+    }
+    
+    $place = implode('+', $addressArr);
+    $place_final = str_replace('&','', $place);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://maps.google.com/maps/api/geocode/json?key=".GOOGLE_MAP_KEY."&address=".$place_final);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+    $headers = array();
+    $headers[] = "Accept: application/json";
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    $result = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+      echo 'Error:' . curl_error($ch);
+      die;
+    }
+    curl_close($ch);
+    $details = json_decode($result, true);
+    
+    $place_id = $details['results'][0]['place_id'];
+    
+    $ch1 = curl_init();
+    curl_setopt($ch1, CURLOPT_URL, "https://maps.googleapis.com/maps/api/place/details/json?key=".GOOGLE_MAP_KEY."&placeid=".$place_id);
+    curl_setopt($ch1, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch1, CURLOPT_CUSTOMREQUEST, "GET");
+    curl_setopt($ch1, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch1, CURLOPT_SSL_VERIFYHOST, false);
+
+    $headers = array();
+    $headers[] = "Accept: application/json";
+    curl_setopt($ch1, CURLOPT_HTTPHEADER, $headers);
+
+    $result1 = curl_exec($ch1);
+
+    if (curl_errno($ch1)) {
+      echo 'Error:' . curl_error($ch1);
+      die;
+    }
+    curl_close($ch1);
+    $review_data = json_decode($result1, true);
+    $html = '<h3>Google Reviews</h3>';
+    if(isset($review_data['result']['reviews'])){
+      foreach($review_data['result']['reviews'] as $review){
+        $text = strlen($review['text']) > 200 ? substr($review['text'],0,200).'...' : $review['text'];
+        $html .= '<div style="margin:25px 0;"><div style="overflow:hidden;"><img style="float:left;width:20%;" src="'.$review['profile_photo_url'].'" alt="'.$review['author_name'].'"/><p style="float:left;width:75%;margin-left:10px;">'.$text.'</p></div><div style="overflow:hidden;margin-top:10px;font-size:12px;text-color:#ddd;"><p style="float:left;width:20%;text-align:center;">'.$review['author_name'].'</p><p style="float:left;width:75%;margin-left:10px;">'.$review['relative_time_description'].'</p></div></div>';
+      }
+    }
+    echo $html;
+    $ret = ob_get_contents();
+    ob_end_clean();
+    return $ret;
+  }
 }
 
 add_shortcode('al-map-display', 'apid_map_display');
