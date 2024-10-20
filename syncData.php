@@ -1,5 +1,4 @@
 <?php
-
 /*
   Plugin Name: Sync Business
   description: A simple custom plugin to get API data
@@ -229,8 +228,13 @@ function sync_external() {
     exit('The form is not valid');
   }
 
+  $site = trim(get_option('sync_display_options')['field_1']);
+  if (empty($site)) {
+    echo json_encode(array('code' => 'site_none'));
+    die;
+  }
   $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices?site=&api_key=123456");
+  curl_setopt($ch, CURLOPT_URL, "https://api.prospectbox.co/ytservices?site=".$site."&api_key=123456");
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -456,18 +460,18 @@ function apid_ggle_reviews_display() {
     $addressArr = explode(' ', $post->post_title);
     if (!empty($city)) {
       $cityArr = explode(' ', $city);
-      foreach($cityArr as $ct){
+      foreach ($cityArr as $ct) {
         array_push($addressArr, $ct);
       }
     }
     if (!empty($country)) {
       array_push($addressArr, $country);
     }
-    
+
     $place = implode('+', $addressArr);
-    $place_final = str_replace('&','', $place);
+    $place_final = str_replace('&', '', $place);
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://maps.google.com/maps/api/geocode/json?key=".GOOGLE_MAP_KEY."&address=".$place_final);
+    curl_setopt($ch, CURLOPT_URL, "https://maps.google.com/maps/api/geocode/json?key=" . GOOGLE_MAP_KEY . "&address=" . $place_final);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -485,11 +489,11 @@ function apid_ggle_reviews_display() {
     }
     curl_close($ch);
     $details = json_decode($result, true);
-    
+
     $place_id = $details['results'][0]['place_id'];
-    
+
     $ch1 = curl_init();
-    curl_setopt($ch1, CURLOPT_URL, "https://maps.googleapis.com/maps/api/place/details/json?key=".GOOGLE_MAP_KEY."&placeid=".$place_id);
+    curl_setopt($ch1, CURLOPT_URL, "https://maps.googleapis.com/maps/api/place/details/json?key=" . GOOGLE_MAP_KEY . "&placeid=" . $place_id);
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($ch1, CURLOPT_CUSTOMREQUEST, "GET");
     curl_setopt($ch1, CURLOPT_SSL_VERIFYPEER, false);
@@ -508,10 +512,11 @@ function apid_ggle_reviews_display() {
     curl_close($ch1);
     $review_data = json_decode($result1, true);
     $html = '<h3>Google Reviews</h3>';
-    if(isset($review_data['result']['reviews'])){
-      foreach($review_data['result']['reviews'] as $review){
-        $text = strlen($review['text']) > 200 ? substr($review['text'],0,200).'...' : $review['text'];
-        $html .= '<div style="margin:25px 0;"><div style="overflow:hidden;"><img style="float:left;width:20%;" src="'.$review['profile_photo_url'].'" alt="'.$review['author_name'].'"/><p style="float:left;width:75%;margin-left:10px;">'.$text.'</p></div><div style="overflow:hidden;margin-top:10px;font-size:12px;text-color:#ddd;"><p style="float:left;width:20%;text-align:center;">'.$review['author_name'].'</p><p style="float:left;width:75%;margin-left:10px;">'.$review['relative_time_description'].'</p></div></div>';
+    if (isset($review_data['result']['reviews'])) {
+      foreach ($review_data['result']['reviews'] as $review) {
+        $text = strlen($review['text']) > 200 ? substr($review['text'], 0, 200) . '...'
+                  : $review['text'];
+        $html .= '<div style="margin:25px 0;"><div style="overflow:hidden;"><img style="float:left;width:20%;" src="' . $review['profile_photo_url'] . '" alt="' . $review['author_name'] . '"/><p style="float:left;width:75%;margin-left:10px;">' . $text . '</p></div><div style="overflow:hidden;margin-top:10px;font-size:12px;text-color:#ddd;"><p style="float:left;width:20%;text-align:center;">' . $review['author_name'] . '</p><p style="float:left;width:75%;margin-left:10px;">' . $review['relative_time_description'] . '</p></div></div>';
       }
     }
     echo $html;
@@ -553,4 +558,108 @@ add_action('wp_enqueue_scripts', 'my_theme_enqueue_styles', 11);
 
 function my_theme_enqueue_styles() {
   wp_enqueue_style('child-style', get_stylesheet_uri());
+}
+
+add_action('admin_menu', 'add_plugin_page');
+add_action('admin_init', 'page_init');
+
+/**
+ * Add options page
+ */
+if (!function_exists('add_plugin_page')) {
+
+  function add_plugin_page() {
+    add_options_page(
+            'Sync Setting',
+            'Sync Setting',
+            'manage_options',
+            'sync-display-settings',
+            'create_admin_page'
+    );
+  }
+
+}
+if (!function_exists('create_admin_page')) {
+
+  function create_admin_page() {
+    ?>
+    <div class="wrap">
+      <h1>Sync Settings</h1>
+      <form method="post" action="options.php">
+        <?php
+        // This prints out all hidden setting fields
+        settings_fields('sync_display_option_group');
+        do_settings_sections('sync-display-settings');
+        submit_button();
+        ?>
+      </form>
+    </div>
+    <?php
+  }
+
+}
+if (!function_exists('page_init')) {
+
+  function page_init() {
+    register_setting(
+            'sync_display_option_group', // Option group
+            'sync_display_options', // Option name
+            'sanitize'// Sanitize
+    );
+
+    add_settings_section(
+            'sync_display_section_id', // ID
+            'Please provide Site for Sync', // Title
+            'print_section_info', // Callback
+            'sync-display-settings' // Page
+    );
+
+    add_settings_field(
+            'field_1', // ID
+            'Site (Number)', // Title 
+            'field_1_callback', // Callback
+            'sync-display-settings', // Page
+            'sync_display_section_id' // Section           
+    );
+  }
+
+}
+if (!function_exists('print_section_info')) {
+
+  function print_section_info() {
+    //print 'Enter your information below:';
+  }
+
+}
+if (!function_exists('field_1_callback')) {
+
+  function field_1_callback() {
+    $options = get_option('sync_display_options');
+    printf(
+            '<input type="text" id="field_1" name="sync_display_options[field_1]" value="%s" />',
+            isset($options['field_1']) ? esc_attr($options['field_1']) : ''
+    );
+  }
+
+}
+if (!function_exists('sanitize')) {
+
+  function sanitize($input) {
+    $new_input = array();
+    if (isset($input['field_1'])) {
+      if (!ctype_digit($input['field_1'])) {
+        add_settings_error(
+                'myUniqueIdentifyer',
+                esc_attr('settings_updated'),
+                __('Site should be number', 'my-text-domain'),
+                'error'
+        );
+        return false;
+      }
+
+      $new_input['field_1'] = sanitize_text_field($input['field_1']);
+    }
+    return $new_input;
+  }
+
 }
